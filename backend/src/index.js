@@ -3,8 +3,22 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+
+// const prisma = new PrismaClient();
+
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 // Middleware
 app.use(cors({
@@ -14,6 +28,8 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+app.use(express.static('public'));
+
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -22,6 +38,16 @@ app.use('/api', require('./routes'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+
+
+app.get('/test', async (req, res) => {
+  const clinics = await prisma.clinics.findMany();
+  res.json(clinics);
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Error handler
 app.use((err, req, res, next) => {
