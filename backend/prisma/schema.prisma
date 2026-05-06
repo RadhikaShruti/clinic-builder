@@ -335,3 +335,51 @@ model services {
 
   @@index([clinic_id], map: "idx_services_clinic_id")
 }
+
+model Patient {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  email     String?
+  full_name String?
+
+  date_of_birth DateTime?
+  gender        String?
+  blood_group   String?
+
+  address String?
+
+  emergency_contact_name  String?
+  emergency_contact_phone String?
+
+  allergies          String?
+  chronic_conditions String?
+
+  is_active  Boolean  @default(true)
+  last_login DateTime?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@index([phone])
+}
+
+
+model PatientOtp {
+  id         String   @id @default(uuid())
+  phone      String
+  otp_code   String
+  expires_at DateTime
+  is_used    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@index([phone])
+}
+
+
+model Appointment {
+  id         String   @id @default(uuid())
+  patient_id String?
+
+  patient Patient? @relation(fields: [patient_id], references: [id], onDelete: SetNull)
+}

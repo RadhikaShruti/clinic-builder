@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../../config/db');
+const prisma = require('../lib/prisma');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -11,17 +12,29 @@ const generateToken = (id) => {
 const signup = async (req, res) => {
   const { email, password, full_name, phone } = req.body;
   try {
-    const existing = await pool.query('SELECT id FROM admin_users WHERE email = $1', [email]);
-    if (existing.rows.length > 0) {
+    // const existing = await pool.query('SELECT id FROM admin_users WHERE email = $1', [email]);
+    const existing = await prisma.admin_users.findUnique({
+      where: { email }
+    });
+    if (existing) {
       return res.status(400).json({ error: 'Email already registered' });
     }
     const password_hash = await bcrypt.hash(password, 12);
-    const result = await pool.query(
-      `INSERT INTO admin_users (email, password_hash, full_name, phone)
-       VALUES ($1, $2, $3, $4) RETURNING id, email, full_name, phone`,
-      [email, password_hash, full_name, phone]
-    );
-    const user = result.rows[0];
+    // const result = await pool.query(
+    //   `INSERT INTO admin_users (email, password_hash, full_name, phone)
+    //    VALUES ($1, $2, $3, $4) RETURNING id, email, full_name, phone`,
+    //   [email, password_hash, full_name, phone]
+    // );
+
+    const result = await prisma.admin_users.create({
+      data: {
+        email,
+        password_hash,
+        full_name,
+        phone
+      }
+    });
+    const user = result ;
     const token = generateToken(user.id);
     res.status(201).json({ token, user });
   } catch (err) {
