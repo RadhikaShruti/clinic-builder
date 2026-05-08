@@ -252,7 +252,7 @@ export function Step4Facilities({ clinic, onNext, onPrev }) {
     } catch (err) { toast(err.message, 'error'); }
   };
 
-  const facilityIcon = { Parking: '🚗', Pharmacy: '💊', Laboratory: '🔬', Emergency: '🚨', Ambulance: '🚑', ICU: '❤️', OT: '🏥', Cafeteria: '🍽', Wheelchair: '♿', WiFi: '📶', 'AC Rooms': '❄️', 'X-Ray': '📡', Ultrasound: '🔊', ECG: '📊', 'Blood Bank': '🩸' };
+  // const facilityIcon = { Parking: '🚗', Pharmacy: '💊', Laboratory: '🔬', Emergency: '🚨', Ambulance: '🚑', ICU: '❤️', OT: '🏥', Cafeteria: '🍽', Wheelchair: '♿', WiFi: '📶', 'AC Rooms': '❄️', 'X-Ray': '📡', Ultrasound: '🔊', ECG: '📊', 'Blood Bank': '🩸' };
 
   return (
     <div className="step-form">
@@ -260,7 +260,7 @@ export function Step4Facilities({ clinic, onNext, onPrev }) {
       <div className="facilities-grid">
         {allFacilities.map(f => (
           <div key={f.id} className={`facility-chip ${selected.includes(f.id) ? 'selected' : ''}`} onClick={() => toggle(f.id)}>
-            <span className="chip-icon">{facilityIcon[f.name] || '🏥'}</span>
+            <span className="chip-icon">{f.icon || '🏥'}</span>
             {f.name}
           </div>
         ))}

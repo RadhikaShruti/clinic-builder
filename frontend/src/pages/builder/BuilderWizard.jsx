@@ -19,16 +19,93 @@ const STEPS = [
 ];
 
 export default function BuilderWizard() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => {
+  return Number(localStorage.getItem('builderStep')) || 1;
+  });
   const [clinic, setClinic] = useState(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
+  // useEffect(() => {
+  //   api.get('/clinic/me').then(c => setClinic(c)).catch(() => {});
+  // }, []);
+
   useEffect(() => {
-    api.get('/clinic/me').then(c => setClinic(c)).catch(() => {});
-  }, []);
+  const loadBuilderData = async () => {
+    try {
+      // 1. Get clinic
+      const c = await api.get('/clinic/me');
+
+      if (!c) return;
+
+      setClinic(c);
+
+      // If localStorage already has step, use it
+      const savedStep = localStorage.getItem('builderStep');
+
+      if (savedStep) {
+        setStep(Number(savedStep));
+        return;
+      }
+
+      // 2. Check services
+      const services = await api.get(`/clinic/${c.id}/services`);
+
+      if (!services || services.length === 0) {
+        setStep(2);
+        return;
+      }
+
+      // 3. Check doctors
+      const doctors = await api.get(`/clinic/${c.id}/doctors`);
+
+      if (!doctors || doctors.length === 0) {
+        setStep(3);
+        return;
+      }
+
+      // 4. Check facilities
+      const facilities = await api.get(`/clinic/${c.id}/facilities`);
+
+      if (!facilities || facilities.length === 0) {
+        setStep(4);
+        return;
+      }
+
+      // 5. About section
+      if (!c.about_us) {
+        setStep(5);
+        return;
+      }
+
+      // 6. Contact section
+      if (!c.google_maps_link) {
+        setStep(6);
+        return;
+      }
+
+      // 7. Theme section
+      if (!c.template_id) {
+        setStep(7);
+        return;
+      }
+
+      // Everything completed
+      setStep(8);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  loadBuilderData();
+}, []);
+
+  useEffect(() => {
+  localStorage.setItem('builderStep', step);
+  }, [step]);
 
   const saveClinic = async (data) => {
     setSaving(true);
@@ -52,6 +129,7 @@ export default function BuilderWizard() {
     setPublishing(true);
     try {
       await api.post('/clinic/publish', {});
+      localStorage.removeItem('builderStep');
       toast('Your clinic website is now LIVE!', 'success');
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {

@@ -216,7 +216,7 @@ const updateTheme = async (req, res) => {
     //   [template_id, primary_color, secondary_color, accent_color, background_color,
     //     text_color, font_family, heading_font, border_radius, custom_css, clinic.rows[0].id]
     // );
-    const updated = await prisma.clinic_themes.update({
+    const updated = await prisma.clinic_themes.upsert({
       where: { clinic_id: clinic.id },
       update: {
         ...req.body,
@@ -245,6 +245,14 @@ const saveWorkingHours = async (req, res) => {
     
     const cid = clinic.id;
 
+    // converts the string 9:00 to date
+    const toTime = (time) => {
+      if (!time) return null;
+
+      // converts "09:00" -> Date object
+      return new Date(`1970-01-01T${time}:00.000Z`);
+    };
+
     for (const h of hours) {
       // await pool.query(
       //   `INSERT INTO clinic_working_hours (clinic_id, day_of_week, is_open, open_time, close_time, has_break, break_start, break_end)
@@ -265,22 +273,22 @@ const saveWorkingHours = async (req, res) => {
         },
         update: {
           is_open: h.is_open,
-          open_time: h.open_time,
-          close_time: h.close_time,
+          open_time: toTime(h.close_time),
+          close_time: toTime(h.close_time),
           has_break: h.has_break || false,
-          break_start: h.break_start,
-          break_end: h.break_end,
+          break_start: toTime(h.break_start),
+          break_end: toTime(h.break_end),
           updated_at: new Date()
         },
         create: {
           clinic_id: cid,
           day_of_week: h.day_of_week,
           is_open: h.is_open,
-          open_time: h.open_time,
-          close_time: h.close_time,
+          open_time: toTime(h.open_time),
+          close_time: toTime(h.close_time),
           has_break: h.has_break || false,
-          break_start: h.break_start,
-          break_end: h.break_end
+          break_start: toTime(h.break_start),
+          break_end: toTime(h.break_end)
         }
       });
     }
@@ -361,9 +369,10 @@ const getAllFacilities = async (req, res) => {
   try {
     // const result = await pool.query('SELECT * FROM facilities WHERE is_default = TRUE ORDER BY name');
     const facilities = await prisma.facilities.findMany({
-      where: { is_default: true },
+      // where: { is_default: true },
       orderBy: { name: 'asc' }
     });
+    console.log(facilities);
     res.json(facilities);
   } catch (err) {
     console.error(err);

@@ -176,8 +176,8 @@ const addDoctor = async (req, res) => {
       });
 
       return doctor;
-      res.status(201).json(result);
     });
+    res.status(201).json(result);
   } catch (err) {
     // await client.query('ROLLBACK');
     console.error(err);
@@ -214,6 +214,14 @@ const updateDoctor = async (req, res) => {
   if (Object.keys(updates).length === 0 && !schedules) {
     return res.status(400).json({ error: 'No valid fields to update' });
   }
+
+  const toTime = (time) => {
+    if (!time) return null;
+
+    return new Date(`1970-01-01T${time}:00.000Z`);
+  };
+
+
   // const client = await pool.connect();
   try {
      const result = await prisma.$transaction(async (tx) => {
@@ -246,8 +254,8 @@ const updateDoctor = async (req, res) => {
             },
             update: {
               is_available: s.is_available !== false,
-              start_time: s.start_time,
-              end_time: s.end_time,
+              start_time: toTime(s.start_time),
+              end_time: toTime(s.end_time),
               slot_duration: s.slot_duration ?? 20,
               max_appointments: s.max_appointments ?? 20,
             },
@@ -256,8 +264,8 @@ const updateDoctor = async (req, res) => {
               clinic_id: clinicId,
               day_of_week: s.day_of_week,
               is_available: s.is_available !== false,
-              start_time: s.start_time,
-              end_time: s.end_time,
+              start_time: toTime(s.start_time),
+              end_time: toTime(s.end_time),
               slot_duration: s.slot_duration ?? 20,
               max_appointments: s.max_appointments ?? 20,
             },
@@ -279,15 +287,15 @@ const updateDoctor = async (req, res) => {
       });
 
       return doctor;
-      res.json(result);
     });
 
-    res.json(result.rows[0]);
+    res.json(result);
   } catch (err) {
     // await client.query('ROLLBACK');
     if (err.message === 'Doctor not found') {
       return res.status(404).json({ error: 'Doctor not found' });
     }
+    console.err(err)
     res.status(500).json({ error: 'Server error' });
   }
 };
